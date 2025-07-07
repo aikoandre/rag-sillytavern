@@ -43,6 +43,20 @@ import { MemoryClient } from './memory_client.js';
             contextIntegrationToggle = $('#rag-context-integration')[0];
             recentMessagesToggle = $('#rag-recent-messages')[0];
 
+            // Get debug and utility buttons
+            const debugButton = $('#rag-debug-button')[0];
+            const syncButton = $('#rag-sync-button')[0];
+            
+            // Get memory management buttons
+            const deleteChatMemoriesButton = $('#rag-delete-chat-memories')[0];
+            const deleteAllMemoriesButton = $('#rag-delete-all-memories')[0];
+            const showChatMemoriesButton = $('#rag-show-chat-memories')[0];
+            const showAllMemoriesButton = $('#rag-show-all-memories')[0];
+            
+            // Get memory display containers
+            const chatMemoriesDisplay = $('#rag-chat-memories-display')[0];
+            const allMemoriesDisplay = $('#rag-all-memories-display')[0];
+
             // Load settings
             fastRerankCountInput.value = extension_settings.rag.fast_rerank_count;
             finalMemoryCountInput.value = extension_settings.rag.final_memory_count;
@@ -87,27 +101,92 @@ import { MemoryClient } from './memory_client.js';
             // Hook into SillyTavern events
             setupEventListeners();
 
-            // Add a debug button
-            const debugButton = document.createElement('button');
-            debugButton.textContent = 'Debug: Add Last Message';
-            debugButton.className = 'menu_button';
+            // Set up debug and utility button event listeners
             debugButton.addEventListener('click', async () => {
                 console.log('RAG: Debug button clicked');
                 await addLatestMessageToMemory();
                 await updateServiceStatusAndMemories();
             });
-            document.querySelector('#rag-settings').appendChild(debugButton);
 
-            // Add a sync button for full chat history
-            const syncButton = document.createElement('button');
-            syncButton.textContent = 'Sync Chat History';
-            syncButton.className = 'menu_button';
             syncButton.addEventListener('click', async () => {
                 console.log('RAG: Sync button clicked');
                 await syncChatHistory();
                 await updateServiceStatusAndMemories();
             });
-            document.querySelector('#rag-settings').appendChild(syncButton);
+
+            // Memory management event listeners
+            deleteChatMemoriesButton.addEventListener('click', async () => {
+                const context = getContext();
+                const characterId = context.characterId;
+                const chatId = context.chatId;
+                
+                if (!characterId || !chatId) {
+                    alert('No current chat to delete memories from.');
+                    return;
+                }
+                
+                if (confirm(`Are you sure you want to delete all memories from this chat?\n\nCharacter: ${characterId}\nChat: ${chatId}\n\nThis action cannot be undone.`)) {
+                    console.log('RAG: Deleting current chat memories');
+                    deleteChatMemoriesButton.disabled = true;
+                    
+                    const result = await client.deleteMemories(String(characterId), String(chatId));
+                    
+                    deleteChatMemoriesButton.disabled = false;
+                    
+                    if (result.error) {
+                        alert(`Error: ${result.error}`);
+                    } else {
+                        alert(`Deleted ${result.deleted} memories from current chat.`);
+                        await updateServiceStatusAndMemories();
+                        // Hide and clear memory displays
+                        chatMemoriesDisplay.style.display = 'none';
+                        allMemoriesDisplay.style.display = 'none';
+                    }
+                }
+            });
+
+            deleteAllMemoriesButton.addEventListener('click', async () => {
+                if (confirm('⚠️ WARNING ⚠️\n\nAre you absolutely sure you want to delete ALL memories from ALL chats?\n\nThis will permanently delete EVERYTHING and cannot be undone!\n\nType "DELETE ALL" in the next prompt to confirm.')) {
+                    const confirmation = prompt('Please type "DELETE ALL" to confirm deletion of all memories:');
+                    if (confirmation === 'DELETE ALL') {
+                        console.log('RAG: Deleting all memories');
+                        deleteAllMemoriesButton.disabled = true;
+                        
+                        const result = await client.deleteMemories();
+                        
+                        deleteAllMemoriesButton.disabled = false;
+                        
+                        if (result.error) {
+                            alert(`Error: ${result.error}`);
+                        } else {
+                            alert(`Deleted ${result.deleted} memories from ALL chats.`);
+                            await updateServiceStatusAndMemories();
+                            // Hide and clear memory displays
+                            chatMemoriesDisplay.style.display = 'none';
+                            allMemoriesDisplay.style.display = 'none';
+                        }
+                    } else {
+                        alert('Deletion cancelled. You must type "DELETE ALL" exactly to confirm.');
+                    }
+                }
+            });
+
+            showChatMemoriesButton.addEventListener('click', async () => {
+                const context = getContext();
+                const characterId = context.characterId;
+                const chatId = context.chatId;
+                
+                if (!characterId || !chatId) {
+                    alert('No current chat to show memories from.');
+                    return;
+                }
+                
+                await displayMemories(chatMemoriesDisplay, String(characterId), String(chatId), 'current chat');
+            });
+
+            showAllMemoriesButton.addEventListener('click', async () => {
+                await displayMemories(allMemoriesDisplay, null, null, 'all chats');
+            });
         } catch (error) {
             console.error('Error initializing RAG extension UI:', error);
         }
@@ -363,6 +442,7 @@ import { MemoryClient } from './memory_client.js';
                     context.setExtensionPrompt('RAG_MEMORIES', fullContext, 0, 0);
                     
                     console.log(`RAG: Injected ${queryResult.results.length} memories and ${recentResult?.recent_messages?.length || 0} recent messages`);
+                    console.log('RAG: Full injected context:', fullContext);
                 }
             }
         } catch (error) {
@@ -445,6 +525,58 @@ import { MemoryClient } from './memory_client.js';
         ).join('');
 
         resultsContainer.innerHTML = html;
+    }
+
+    async function displayMemories(displayContainer, characterId, chatId, displayType) {
+        try {
+            console.log(`RAG: Displaying memories for ${displayType}`);
+            
+            // Show the container and set loading state
+            displayContainer.style.display = 'block';
+            displayContainer.innerHTML = '<p>Loading memories...</p>';
+            
+            // Get memories
+            const result = await client.getMemories(characterId, chatId, 100); // Limit to 100 for performance
+            
+            if (result.error) {
+                displayContainer.innerHTML = `<p style="color: red;">Error: ${result.error}</p>`;
+                return;
+            }
+            
+            if (!result.memories || result.memories.length === 0) {
+                displayContainer.innerHTML = `<p>No memories found for ${displayType}.</p>`;
+                return;
+            }
+            
+            // Format and display memories
+            const memoriesHtml = result.memories.map((memory, index) => {
+                const timestamp = memory.timestamp ? new Date(memory.timestamp).toLocaleString() : 'Unknown';
+                const messageType = memory.message_type || 'unknown';
+                const charId = memory.character_id || 'unknown';
+                const chatIdShort = memory.chat_id ? memory.chat_id.substring(0, 30) + '...' : 'unknown';
+                
+                return `
+                    <div class="rag-memory-item">
+                        <div class="rag-memory-meta">
+                            #${index + 1} | ${timestamp} | Type: ${messageType} | Character: ${charId} | Chat: ${chatIdShort}
+                        </div>
+                        <div class="rag-memory-text">${memory.text}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            displayContainer.innerHTML = `
+                <div style="margin-bottom: 10px; font-weight: bold;">
+                    Found ${result.memories.length} memories for ${displayType}
+                    ${result.memories.length === 100 ? ' (showing first 100)' : ''}
+                </div>
+                ${memoriesHtml}
+            `;
+            
+        } catch (error) {
+            console.error(`RAG: Error displaying memories for ${displayType}:`, error);
+            displayContainer.innerHTML = `<p style="color: red;">Error loading memories: ${error.message}</p>`;
+        }
     }
 
     async function updateServiceStatusAndMemories() {

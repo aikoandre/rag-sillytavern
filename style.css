@@ -84,3 +84,34 @@
     font-size: 11px;
     margin-top: 2px;
 }
+
+.rag-memory-display {
+    border: 1px solid #444;
+    padding: 10px;
+    margin-top: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: #222;
+}
+
+.rag-memory-item {
+    border-bottom: 1px solid #333;
+    padding: 8px;
+    margin-bottom: 5px;
+}
+
+.rag-memory-item:last-child {
+    border-bottom: none;
+}
+
+.rag-memory-meta {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 5px;
+}
+
+.rag-memory-text {
+    font-size: 13px;
+    color: #ddd;
+    line-height: 1.4;
+}

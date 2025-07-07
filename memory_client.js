@@ -190,6 +190,70 @@ class MemoryClient {
             return { error: 'Failed to connect to the RAG service.' };
         }
     }
+
+    /**
+     * Delete memories based on character and chat filters.
+     * @param {string|null} characterId Optional character ID filter
+     * @param {string|null} chatId Optional chat ID filter
+     * @returns {Promise<object>} The server's response with deletion count
+     */
+    async deleteMemories(characterId = null, chatId = null) {
+        try {
+            const payload = {};
+            if (characterId !== null) payload.character_id = characterId;
+            if (chatId !== null) payload.chat_id = chatId;
+
+            const response = await fetch(`${this.baseUrl}/delete_memories`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error deleting memories:', error);
+            return { error: 'Failed to connect to the RAG service.' };
+        }
+    }
+
+    /**
+     * Get all memories with optional filtering.
+     * @param {string|null} characterId Optional character ID filter
+     * @param {string|null} chatId Optional chat ID filter
+     * @param {number|null} limit Optional limit on number of memories returned
+     * @returns {Promise<object>} The server's response with memories array
+     */
+    async getMemories(characterId = null, chatId = null, limit = null) {
+        try {
+            const payload = {};
+            if (characterId !== null) payload.character_id = characterId;
+            if (chatId !== null) payload.chat_id = chatId;
+            if (limit !== null) payload.limit = limit;
+
+            const response = await fetch(`${this.baseUrl}/get_memories`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting memories:', error);
+            return { error: 'Failed to connect to the RAG service.' };
+        }
+    }
 }
 
 // Export the class for use in other modules
