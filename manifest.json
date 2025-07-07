@@ -1,9 +1,12 @@
 {
-  "name": "RAG Extension",
+  "display_name": "RAG Extension",
+  "loading_order": 5,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
   "author": "Kilo Code",
   "version": "1.0.0",
-  "description": "Retrieval-Augmented Generation (RAG) system for SillyTavern.",
-  "entrypoint": "index.js",
-  "settings": "settings.html",
-  "dependencies": []
+  "homePage": "https://github.com/aikoandre/RAG-ST",
+  "auto_update": true
 }

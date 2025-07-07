@@ -1,6 +1,8 @@
 // SillyTavern RAG Extension
 // Core logic and UI hooks for the RAG extension.
 
+import { getContext, extension_settings, saveMetadataDebounced, renderExtensionTemplateAsync } from '../../../extensions.js';
+
 (function () {
     const RAG_SERVICE_URL = 'http://127.0.0.1:5000';
     const client = new MemoryClient(RAG_SERVICE_URL);
@@ -9,7 +11,11 @@
     let addMemoryInput, addMemoryButton, queryInput, queryButton, resultsContainer, statusIndicator;
     let totalMemoriesSpan, lastQueryTokensSpan, initialRetrievalCountInput, finalMemoryCountInput;
 
-    function initializeUI() {
+    async function initializeUI() {
+        const settingsHtml = await renderExtensionTemplateAsync('rag_extension_for_sillytavern', 'settings');
+        const getContainer = () => document.getElementById('rag_container') ?? document.getElementById('extensions_settings');
+        getContainer().append($(settingsHtml));
+
         addMemoryInput = document.getElementById('rag-add-memory-input');
         addMemoryButton = document.getElementById('rag-add-memory-button');
         queryInput = document.getElementById('rag-query-input');
@@ -80,7 +86,7 @@
             return;
         }
 
-        const html = results.map(item => 
+        const html = results.map(item =>
             `<div class="rag-result-item">${item.text}</div>`
         ).join('');
 
