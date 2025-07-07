@@ -13,7 +13,7 @@ import { getContext, extension_settings, saveMetadataDebounced, renderExtensionT
 
     async function initializeUI() {
         const settingsHtml = await renderExtensionTemplateAsync('rag_extension_for_sillytavern', 'settings');
-        const getContainer = () => document.getElementById('rag_container') ?? document.getElementById('extensions_settings');
+        const getContainer = () => document.getElementById('rag-settings') ?? document.getElementById('extensions_settings');
         getContainer().append($(settingsHtml));
 
         addMemoryInput = document.getElementById('rag-add-memory-input');
