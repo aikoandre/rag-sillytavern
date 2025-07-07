@@ -60,19 +60,20 @@
 }
 .rag-config-item {
     display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 15px;
 }
 .rag-config-item label {
-    flex: 1;
-    margin-right: 10px;
+    width: 100%;
+    margin-bottom: 5px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
 }
 .rag-config-item input[type="number"] {
-    flex: 1;
-    max-width: 100px;
+    width: 100%;
+    max-width: none;
 }
 .rag-config-item input[type="checkbox"] {
     margin-right: 8px;
