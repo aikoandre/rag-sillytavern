@@ -14,7 +14,7 @@ import { MemoryClient } from './memory_client.js';
 
     async function initializeUI() {
         try {
-            const settingsHtml = await renderExtensionTemplateAsync('third-party/rag_extension_for_sillytavern', 'settings');
+            const settingsHtml = await renderExtensionTemplateAsync('third-party/rag-sillytavern', 'settings');
             $('#extensions_settings').append(settingsHtml);
 
             addMemoryInput = $('#rag-add-memory-input')[0];
