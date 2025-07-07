@@ -135,8 +135,11 @@ import { MemoryClient } from './memory_client.js';
                         alert(`Error: ${result.error}`);
                     } else {
                         alert(`Deleted ${result.deleted} memories from current chat.`);
-                        await updateServiceStatusAndMemories();
-                        await updateMemoryCounts();
+                        // Add a small delay to ensure backend has finished saving
+                        setTimeout(async () => {
+                            await updateServiceStatusAndMemories();
+                            await updateMemoryCounts();
+                        }, 500);
                     }
                 }
             });
@@ -158,9 +161,12 @@ import { MemoryClient } from './memory_client.js';
                         } else {
                             alert(`Deleted ${result.deleted} memories from ALL chats.`);
                             console.log('RAG: Calling updateServiceStatusAndMemories after delete all');
-                            await updateServiceStatusAndMemories();
-                            console.log('RAG: Calling updateMemoryCounts after delete all');
-                            await updateMemoryCounts();
+                            // Add a small delay to ensure backend has finished saving
+                            setTimeout(async () => {
+                                await updateServiceStatusAndMemories();
+                                console.log('RAG: Calling updateMemoryCounts after delete all');
+                                await updateMemoryCounts();
+                            }, 500);
                         }
                     } else {
                         alert('Deletion cancelled. You must type "DELETE ALL" exactly to confirm.');
