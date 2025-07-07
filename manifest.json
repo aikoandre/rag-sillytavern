@@ -1,0 +1,9 @@
+{
+  "name": "RAG Extension",
+  "author": "Kilo Code",
+  "version": "1.0.0",
+  "description": "Retrieval-Augmented Generation (RAG) system for SillyTavern.",
+  "entrypoint": "index.js",
+  "settings": "settings.html",
+  "dependencies": []
+}
