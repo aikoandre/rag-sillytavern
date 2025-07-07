@@ -41,12 +41,14 @@
                 <div class="rag-section">
                     <h3>Reranking Configuration</h3>
                     <div class="rag-config-item">
-                        <label for="rag-initial-retrieval-count">Initial Retrieval Count (top_k):</label>
-                        <input type="number" id="rag-initial-retrieval-count" class="text_pole" value="100" min="1">
+                        <label for="rag-fast-rerank-count">Fast Rerank Count (rerank_fast_top_n):</label>
+                        <input type="number" id="rag-fast-rerank-count" class="text_pole" value="100" min="1">
+                        <small>Number of memories to pass to the strong reranker (default: 100)</small>
                     </div>
                     <div class="rag-config-item">
                         <label for="rag-final-memory-count">Final Memory Count (final_top_n):</label>
                         <input type="number" id="rag-final-memory-count" class="text_pole" value="10" min="1">
+                        <small>Final number of memories to return (default: 10)</small>
                     </div>
                 </div>
 

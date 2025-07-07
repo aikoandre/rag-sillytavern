@@ -10,7 +10,7 @@ import { MemoryClient } from './memory_client.js';
 
     // --- UI Elements ---
     let addMemoryInput, addMemoryButton, queryInput, queryButton, resultsContainer, statusIndicator;
-    let totalMemoriesSpan, lastQueryTokensSpan, initialRetrievalCountInput, finalMemoryCountInput;
+    let totalMemoriesSpan, lastQueryTokensSpan, fastRerankCountInput, finalMemoryCountInput;
     let autoMemoryToggle, contextIntegrationToggle, recentMessagesToggle;
 
     // Extension settings
@@ -18,7 +18,7 @@ import { MemoryClient } from './memory_client.js';
         auto_memory: true,
         context_integration: true,
         recent_messages_enabled: true,
-        initial_retrieval_count: 100,
+        fast_rerank_count: 100,
         final_memory_count: 10
     };
 
@@ -35,14 +35,14 @@ import { MemoryClient } from './memory_client.js';
             statusIndicator = $('#rag-service-status')[0];
             totalMemoriesSpan = $('#rag-total-memories')[0];
             lastQueryTokensSpan = $('#rag-last-query-tokens')[0];
-            initialRetrievalCountInput = $('#rag-initial-retrieval-count')[0];
+            fastRerankCountInput = $('#rag-fast-rerank-count')[0];
             finalMemoryCountInput = $('#rag-final-memory-count')[0];
             autoMemoryToggle = $('#rag-auto-memory')[0];
             contextIntegrationToggle = $('#rag-context-integration')[0];
             recentMessagesToggle = $('#rag-recent-messages')[0];
 
             // Load settings
-            initialRetrievalCountInput.value = extension_settings.rag.initial_retrieval_count;
+            fastRerankCountInput.value = extension_settings.rag.fast_rerank_count;
             finalMemoryCountInput.value = extension_settings.rag.final_memory_count;
             autoMemoryToggle.checked = extension_settings.rag.auto_memory;
             contextIntegrationToggle.checked = extension_settings.rag.context_integration;
@@ -53,8 +53,8 @@ import { MemoryClient } from './memory_client.js';
             queryButton.addEventListener('click', handleQuery);
             
             // Settings change handlers
-            initialRetrievalCountInput.addEventListener('change', () => {
-                extension_settings.rag.initial_retrieval_count = parseInt(initialRetrievalCountInput.value);
+            fastRerankCountInput.addEventListener('change', () => {
+                extension_settings.rag.fast_rerank_count = parseInt(fastRerankCountInput.value);
                 saveMetadataDebounced();
             });
             
@@ -173,7 +173,8 @@ import { MemoryClient } from './memory_client.js';
                     character_id: String(characterId),
                     chat_id: String(chatId),
                     include_all_chats: false,
-                    top_k: extension_settings.rag.initial_retrieval_count,
+                    top_k: -1,  // Always retrieve all memories, then filter by character/chat
+                    rerank_fast_top_n: extension_settings.rag.fast_rerank_count,
                     final_top_n: extension_settings.rag.final_memory_count
                 });
 
@@ -237,14 +238,15 @@ import { MemoryClient } from './memory_client.js';
         resultsContainer.innerHTML = '<p>Querying...</p>';
         lastQueryTokensSpan.textContent = '0'; // Reset token count
 
-        const top_k = parseInt(initialRetrievalCountInput.value, 10);
+        const rerank_fast_top_n = parseInt(fastRerankCountInput.value, 10);
         const final_top_n = parseInt(finalMemoryCountInput.value, 10);
 
         const result = await client.queryMemories(text, {
             character_id: characterId ? String(characterId) : null,
             chat_id: chatId ? String(chatId) : null,
             include_all_chats: false,
-            top_k: top_k,
+            top_k: -1,  // Always retrieve all memories, then filter by character/chat
+            rerank_fast_top_n: rerank_fast_top_n,
             final_top_n: final_top_n
         });
         queryButton.disabled = false;
