@@ -66,8 +66,20 @@
 .rag-config-item label {
     flex: 1;
     margin-right: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 .rag-config-item input[type="number"] {
     flex: 1;
     max-width: 100px;
+}
+.rag-config-item input[type="checkbox"] {
+    margin-right: 8px;
+}
+.rag-config-item small {
+    display: block;
+    color: #999;
+    font-size: 11px;
+    margin-top: 2px;
 }

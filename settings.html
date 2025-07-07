@@ -49,6 +49,31 @@
                         <input type="number" id="rag-final-memory-count" class="text_pole" value="10" min="1">
                     </div>
                 </div>
+
+                <div class="rag-section">
+                    <h3>SillyTavern Integration</h3>
+                    <div class="rag-config-item">
+                        <label>
+                            <input type="checkbox" id="rag-auto-memory" checked>
+                            Auto-add messages to memory
+                        </label>
+                        <small>Automatically add user and assistant messages to memory when they are sent/received</small>
+                    </div>
+                    <div class="rag-config-item">
+                        <label>
+                            <input type="checkbox" id="rag-context-integration" checked>
+                            Inject memories into AI context
+                        </label>
+                        <small>Automatically inject relevant memories into the AI's system prompt during generation</small>
+                    </div>
+                    <div class="rag-config-item">
+                        <label>
+                            <input type="checkbox" id="rag-recent-messages" checked>
+                            Include recent messages in context
+                        </label>
+                        <small>Add the last 10 messages to the AI context for better continuity</small>
+                    </div>
+                </div>
                 <hr class="sysHR">
             </div>
         </div>
