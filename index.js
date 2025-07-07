@@ -149,6 +149,7 @@ import { MemoryClient } from './memory_client.js';
                         deleteAllMemoriesButton.disabled = true;
                         
                         const result = await client.deleteMemories();
+                        console.log('RAG: Delete all memories result:', result);
                         
                         deleteAllMemoriesButton.disabled = false;
                         
@@ -156,7 +157,9 @@ import { MemoryClient } from './memory_client.js';
                             alert(`Error: ${result.error}`);
                         } else {
                             alert(`Deleted ${result.deleted} memories from ALL chats.`);
+                            console.log('RAG: Calling updateServiceStatusAndMemories after delete all');
                             await updateServiceStatusAndMemories();
+                            console.log('RAG: Calling updateMemoryCounts after delete all');
                             await updateMemoryCounts();
                         }
                     } else {
@@ -535,17 +538,23 @@ import { MemoryClient } from './memory_client.js';
 
     async function updateMemoryCounts() {
         try {
+            console.log('RAG: updateMemoryCounts called');
             const context = getContext();
             const characterId = context.characterId;
             const chatId = context.chatId;
 
             // Update all memories count
             try {
+                console.log('RAG: Fetching all memories count...');
                 const allMemoriesResult = await client.getMemories(null, null, null);
+                console.log('RAG: All memories result:', allMemoriesResult);
                 if (allMemoriesResult.error) {
+                    console.error('RAG: Error in all memories result:', allMemoriesResult.error);
                     allMemoriesCountSpan.textContent = 'Error';
                 } else {
-                    allMemoriesCountSpan.textContent = allMemoriesResult.total || 0;
+                    const count = allMemoriesResult.total || 0;
+                    console.log('RAG: Setting all memories count to:', count);
+                    allMemoriesCountSpan.textContent = count;
                 }
             } catch (error) {
                 console.error('Error getting all memories count:', error);
@@ -555,13 +564,19 @@ import { MemoryClient } from './memory_client.js';
             // Update current chat memories count
             try {
                 if (characterId && chatId) {
+                    console.log('RAG: Fetching current chat memories count for:', characterId, chatId);
                     const chatMemoriesResult = await client.getMemories(String(characterId), String(chatId), null);
+                    console.log('RAG: Current chat memories result:', chatMemoriesResult);
                     if (chatMemoriesResult.error) {
+                        console.error('RAG: Error in current chat memories result:', chatMemoriesResult.error);
                         currentChatMemoriesSpan.textContent = 'Error';
                     } else {
-                        currentChatMemoriesSpan.textContent = chatMemoriesResult.total || 0;
+                        const count = chatMemoriesResult.total || 0;
+                        console.log('RAG: Setting current chat memories count to:', count);
+                        currentChatMemoriesSpan.textContent = count;
                     }
                 } else {
+                    console.log('RAG: No character or chat ID, setting current chat memories to N/A');
                     currentChatMemoriesSpan.textContent = 'N/A';
                 }
             } catch (error) {
