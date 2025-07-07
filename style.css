@@ -1,16 +1,31 @@
 .rag-container {
-    padding: 10px;
+    padding: 0;
 }
-.rag-header {
+
+/* Drawer header styling */
+.rag-container .inline-drawer-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    padding: 10px;
 }
+
+.rag-container .inline-drawer-header .flex-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.rag-container .inline-drawer-content {
+    padding: 10px;
+}
+
 .rag-status {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 12px;
 }
 .rag-status-indicator {
     display: inline-block;

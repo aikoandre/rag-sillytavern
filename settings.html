@@ -1,46 +1,56 @@
 <!-- SillyTavern RAG Extension Settings -->
 <div id="rag-settings" class="rag-container">
-    <div class="rag-header">
-        <h2>RAG Extension Settings</h2>
-        <div class="rag-status">
-            <span>Service Status:</span>
-            <span id="rag-service-status" class="rag-status-indicator rag-status-disconnected"></span>
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <div class="flex-container alignitemscenter margin0">
+                <b>RAG Extension</b>
+                <div class="rag-status">
+                    <span>Service Status:</span>
+                    <span id="rag-service-status" class="rag-status-indicator rag-status-disconnected"></span>
+                </div>
+            </div>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
-    </div>
+        <div class="inline-drawer-content">
+            <div id="ragExtensionDrawerContents">
+                <div class="rag-section">
+                    <h3>Add Memory</h3>
+                    <textarea id="rag-add-memory-input" class="text_pole" rows="3" placeholder="Enter text to add as a memory..."></textarea>
+                    <button id="rag-add-memory-button" class="menu_button">Add Memory</button>
+                </div>
 
-    <div class="rag-section">
-        <h3>Add Memory</h3>
-        <textarea id="rag-add-memory-input" class="text_pole" rows="3" placeholder="Enter text to add as a memory..."></textarea>
-        <button id="rag-add-memory-button" class="menu_button">Add Memory</button>
-    </div>
+                <div class="rag-section">
+                    <h3>Query Memories</h3>
+                    <textarea id="rag-query-input" class="text_pole" rows="3" placeholder="Enter text to find relevant memories..."></textarea>
+                    <button id="rag-query-button" class="menu_button">Query</button>
+                </div>
 
-    <div class="rag-section">
-        <h3>Query Memories</h3>
-        <textarea id="rag-query-input" class="text_pole" rows="3" placeholder="Enter text to find relevant memories..."></textarea>
-        <button id="rag-query-button" class="menu_button">Query</button>
-    </div>
+                <div class="rag-section">
+                    <h3>Results</h3>
+                    <div id="rag-results-container" class="rag-results">
+                        <p>Query results will be displayed here.</p>
+                    </div>
+                </div>
+                
+                <div class="rag-section">
+                    <h3>System Status</h3>
+                    <p>Total Memories: <span id="rag-total-memories">0</span></p>
+                    <p>Tokens in Last Query: <span id="rag-last-query-tokens">0</span></p>
+                </div>
 
-    <div class="rag-section">
-        <h3>Results</h3>
-        <div id="rag-results-container" class="rag-results">
-            <p>Query results will be displayed here.</p>
-        </div>
-    </div>
-    <div class="rag-section">
-        <h3>System Status</h3>
-        <p>Total Memories: <span id="rag-total-memories">0</span></p>
-        <p>Tokens in Last Query: <span id="rag-last-query-tokens">0</span></p>
-    </div>
-
-    <div class="rag-section">
-        <h3>Reranking Configuration</h3>
-        <div class="rag-config-item">
-            <label for="rag-initial-retrieval-count">Initial Retrieval Count (top_k):</label>
-            <input type="number" id="rag-initial-retrieval-count" class="text_pole" value="100" min="1">
-        </div>
-        <div class="rag-config-item">
-            <label for="rag-final-memory-count">Final Memory Count (final_top_n):</label>
-            <input type="number" id="rag-final-memory-count" class="text_pole" value="10" min="1">
+                <div class="rag-section">
+                    <h3>Reranking Configuration</h3>
+                    <div class="rag-config-item">
+                        <label for="rag-initial-retrieval-count">Initial Retrieval Count (top_k):</label>
+                        <input type="number" id="rag-initial-retrieval-count" class="text_pole" value="100" min="1">
+                    </div>
+                    <div class="rag-config-item">
+                        <label for="rag-final-memory-count">Final Memory Count (final_top_n):</label>
+                        <input type="number" id="rag-final-memory-count" class="text_pole" value="10" min="1">
+                    </div>
+                </div>
+                <hr class="sysHR">
+            </div>
         </div>
     </div>
 </div>
