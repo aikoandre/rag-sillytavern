@@ -34,7 +34,7 @@
                 
                 <div class="rag-section">
                     <h3>System Status</h3>
-                    <p>Total Memories: <span id="rag-total-memories">0</span></p>
+                    <p>Service Status: <span id="rag-service-status" class="rag-status-indicator rag-status-disconnected"></span></p>
                     <p>Tokens in Last Query: <span id="rag-last-query-tokens">0</span></p>
                 </div>
 
@@ -102,22 +102,14 @@
                 </div>
 
                 <div class="rag-section">
-                    <h3>Current Chat Memories</h3>
+                    <h3>Memory Statistics</h3>
                     <div class="rag-config-item">
-                        <button id="rag-show-chat-memories" class="menu_button">Show Current Chat Memories</button>
-                        <div id="rag-chat-memories-display" class="rag-memory-display" style="display: none;">
-                            <p>Loading memories...</p>
-                        </div>
+                        <p>Current Chat Memories: <span id="rag-current-chat-memories" class="rag-count">0</span></p>
+                        <small>Number of memories for the current character and chat</small>
                     </div>
-                </div>
-
-                <div class="rag-section">
-                    <h3>All Memories</h3>
                     <div class="rag-config-item">
-                        <button id="rag-show-all-memories" class="menu_button">Show All Memories</button>
-                        <div id="rag-all-memories-display" class="rag-memory-display" style="display: none;">
-                            <p>Loading memories...</p>
-                        </div>
+                        <p>All Memories: <span id="rag-all-memories-count" class="rag-count">0</span></p>
+                        <small>Total number of memories across all characters and chats</small>
                     </div>
                 </div>
                 <hr class="sysHR">

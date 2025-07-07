@@ -115,3 +115,20 @@
     color: #ddd;
     line-height: 1.4;
 }
+
+.rag-count {
+    font-weight: bold;
+    color: #4caf50;
+    font-size: 14px;
+}
+
+/* Make all buttons within the RAG extension full width */
+.rag-container .menu_button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.rag-container button {
+    width: 100%;
+    box-sizing: border-box;
+}

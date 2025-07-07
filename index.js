@@ -10,8 +10,9 @@ import { MemoryClient } from './memory_client.js';
 
     // --- UI Elements ---
     let addMemoryInput, addMemoryButton, queryInput, queryButton, resultsContainer, statusIndicator;
-    let totalMemoriesSpan, lastQueryTokensSpan, fastRerankCountInput, finalMemoryCountInput;
+    let lastQueryTokensSpan, fastRerankCountInput, finalMemoryCountInput;
     let autoMemoryToggle, contextIntegrationToggle, recentMessagesToggle;
+    let currentChatMemoriesSpan, allMemoriesCountSpan;
 
     // Extension settings
     extension_settings.rag = extension_settings.rag || {
@@ -35,13 +36,14 @@ import { MemoryClient } from './memory_client.js';
             queryButton = $('#rag-query-button')[0];
             resultsContainer = $('#rag-results-container')[0];
             statusIndicator = $('#rag-service-status')[0];
-            totalMemoriesSpan = $('#rag-total-memories')[0];
             lastQueryTokensSpan = $('#rag-last-query-tokens')[0];
             fastRerankCountInput = $('#rag-fast-rerank-count')[0];
             finalMemoryCountInput = $('#rag-final-memory-count')[0];
             autoMemoryToggle = $('#rag-auto-memory')[0];
             contextIntegrationToggle = $('#rag-context-integration')[0];
             recentMessagesToggle = $('#rag-recent-messages')[0];
+            currentChatMemoriesSpan = $('#rag-current-chat-memories')[0];
+            allMemoriesCountSpan = $('#rag-all-memories-count')[0];
 
             // Get debug and utility buttons
             const debugButton = $('#rag-debug-button')[0];
@@ -50,12 +52,6 @@ import { MemoryClient } from './memory_client.js';
             // Get memory management buttons
             const deleteChatMemoriesButton = $('#rag-delete-chat-memories')[0];
             const deleteAllMemoriesButton = $('#rag-delete-all-memories')[0];
-            const showChatMemoriesButton = $('#rag-show-chat-memories')[0];
-            const showAllMemoriesButton = $('#rag-show-all-memories')[0];
-            
-            // Get memory display containers
-            const chatMemoriesDisplay = $('#rag-chat-memories-display')[0];
-            const allMemoriesDisplay = $('#rag-all-memories-display')[0];
 
             // Load settings
             fastRerankCountInput.value = extension_settings.rag.fast_rerank_count;
@@ -106,12 +102,14 @@ import { MemoryClient } from './memory_client.js';
                 console.log('RAG: Debug button clicked');
                 await addLatestMessageToMemory();
                 await updateServiceStatusAndMemories();
+                await updateMemoryCounts();
             });
 
             syncButton.addEventListener('click', async () => {
                 console.log('RAG: Sync button clicked');
                 await syncChatHistory();
                 await updateServiceStatusAndMemories();
+                await updateMemoryCounts();
             });
 
             // Memory management event listeners
@@ -138,9 +136,7 @@ import { MemoryClient } from './memory_client.js';
                     } else {
                         alert(`Deleted ${result.deleted} memories from current chat.`);
                         await updateServiceStatusAndMemories();
-                        // Hide and clear memory displays
-                        chatMemoriesDisplay.style.display = 'none';
-                        allMemoriesDisplay.style.display = 'none';
+                        await updateMemoryCounts();
                     }
                 }
             });
@@ -161,9 +157,7 @@ import { MemoryClient } from './memory_client.js';
                         } else {
                             alert(`Deleted ${result.deleted} memories from ALL chats.`);
                             await updateServiceStatusAndMemories();
-                            // Hide and clear memory displays
-                            chatMemoriesDisplay.style.display = 'none';
-                            allMemoriesDisplay.style.display = 'none';
+                            await updateMemoryCounts();
                         }
                     } else {
                         alert('Deletion cancelled. You must type "DELETE ALL" exactly to confirm.');
@@ -171,22 +165,9 @@ import { MemoryClient } from './memory_client.js';
                 }
             });
 
-            showChatMemoriesButton.addEventListener('click', async () => {
-                const context = getContext();
-                const characterId = context.characterId;
-                const chatId = context.chatId;
-                
-                if (!characterId || !chatId) {
-                    alert('No current chat to show memories from.');
-                    return;
-                }
-                
-                await displayMemories(chatMemoriesDisplay, String(characterId), String(chatId), 'current chat');
-            });
-
-            showAllMemoriesButton.addEventListener('click', async () => {
-                await displayMemories(allMemoriesDisplay, null, null, 'all chats');
-            });
+            // Update memory counts every 5 seconds
+            setInterval(updateMemoryCounts, 5000);
+            updateMemoryCounts(); // Initial update
         } catch (error) {
             console.error('Error initializing RAG extension UI:', error);
         }
@@ -475,6 +456,7 @@ import { MemoryClient } from './memory_client.js';
             addMemoryInput.value = '';
             alert('Memory added successfully!');
             updateServiceStatusAndMemories(); // Refresh count
+            updateMemoryCounts(); // Update specific memory counts
         }
     }
 
@@ -527,72 +509,17 @@ import { MemoryClient } from './memory_client.js';
         resultsContainer.innerHTML = html;
     }
 
-    async function displayMemories(displayContainer, characterId, chatId, displayType) {
-        try {
-            console.log(`RAG: Displaying memories for ${displayType}`);
-            
-            // Show the container and set loading state
-            displayContainer.style.display = 'block';
-            displayContainer.innerHTML = '<p>Loading memories...</p>';
-            
-            // Get memories
-            const result = await client.getMemories(characterId, chatId, 100); // Limit to 100 for performance
-            
-            if (result.error) {
-                displayContainer.innerHTML = `<p style="color: red;">Error: ${result.error}</p>`;
-                return;
-            }
-            
-            if (!result.memories || result.memories.length === 0) {
-                displayContainer.innerHTML = `<p>No memories found for ${displayType}.</p>`;
-                return;
-            }
-            
-            // Format and display memories
-            const memoriesHtml = result.memories.map((memory, index) => {
-                const timestamp = memory.timestamp ? new Date(memory.timestamp).toLocaleString() : 'Unknown';
-                const messageType = memory.message_type || 'unknown';
-                const charId = memory.character_id || 'unknown';
-                const chatIdShort = memory.chat_id ? memory.chat_id.substring(0, 30) + '...' : 'unknown';
-                
-                return `
-                    <div class="rag-memory-item">
-                        <div class="rag-memory-meta">
-                            #${index + 1} | ${timestamp} | Type: ${messageType} | Character: ${charId} | Chat: ${chatIdShort}
-                        </div>
-                        <div class="rag-memory-text">${memory.text}</div>
-                    </div>
-                `;
-            }).join('');
-            
-            displayContainer.innerHTML = `
-                <div style="margin-bottom: 10px; font-weight: bold;">
-                    Found ${result.memories.length} memories for ${displayType}
-                    ${result.memories.length === 100 ? ' (showing first 100)' : ''}
-                </div>
-                ${memoriesHtml}
-            `;
-            
-        } catch (error) {
-            console.error(`RAG: Error displaying memories for ${displayType}:`, error);
-            displayContainer.innerHTML = `<p style="color: red;">Error loading memories: ${error.message}</p>`;
-        }
-    }
-
     async function updateServiceStatusAndMemories() {
         try {
             const statusResult = await client.getServiceStatus();
             if (statusResult.error) {
                 updateStatus(false);
-                totalMemoriesSpan.textContent = 'Error';
             } else {
                 updateStatus(true);
-                totalMemoriesSpan.textContent = statusResult.total_memories;
             }
         } catch (error) {
-            console.error('Error updating service status and memories:', error);
+            console.error('Error updating service status:', error);
             updateStatus(false);
-            totalMemoriesSpan.textContent = 'Error';
         }
     }
 
@@ -603,6 +530,48 @@ import { MemoryClient } from './memory_client.js';
         } else {
             statusIndicator.classList.remove('rag-status-connected');
             statusIndicator.classList.add('rag-status-disconnected');
+        }
+    }
+
+    async function updateMemoryCounts() {
+        try {
+            const context = getContext();
+            const characterId = context.characterId;
+            const chatId = context.chatId;
+
+            // Update all memories count
+            try {
+                const allMemoriesResult = await client.getMemories(null, null, null);
+                if (allMemoriesResult.error) {
+                    allMemoriesCountSpan.textContent = 'Error';
+                } else {
+                    allMemoriesCountSpan.textContent = allMemoriesResult.total || 0;
+                }
+            } catch (error) {
+                console.error('Error getting all memories count:', error);
+                allMemoriesCountSpan.textContent = 'Error';
+            }
+
+            // Update current chat memories count
+            try {
+                if (characterId && chatId) {
+                    const chatMemoriesResult = await client.getMemories(String(characterId), String(chatId), null);
+                    if (chatMemoriesResult.error) {
+                        currentChatMemoriesSpan.textContent = 'Error';
+                    } else {
+                        currentChatMemoriesSpan.textContent = chatMemoriesResult.total || 0;
+                    }
+                } else {
+                    currentChatMemoriesSpan.textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Error getting current chat memories count:', error);
+                currentChatMemoriesSpan.textContent = 'Error';
+            }
+        } catch (error) {
+            console.error('Error updating memory counts:', error);
+            allMemoriesCountSpan.textContent = 'Error';
+            currentChatMemoriesSpan.textContent = 'Error';
         }
     }
     
