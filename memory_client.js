@@ -128,6 +128,68 @@ class MemoryClient {
             return { error: 'Failed to connect to the RAG service.', recent_messages: [] };
         }
     }
+
+    /**
+     * Adds a chat message to memory using the specialized endpoint.
+     * @param {object} messageData The message data object (can contain mes, text, is_user, etc.)
+     * @param {object} options Additional options like character_id, chat_id, message_type
+     * @returns {Promise<object>} The server's response.
+     */
+    async addChatMessage(messageData, options = {}) {
+        try {
+            const payload = {
+                ...messageData,
+                ...options
+            };
+
+            const response = await fetch(`${this.baseUrl}/add_chat_message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error adding chat message:', error);
+            return { error: 'Failed to connect to the RAG service.' };
+        }
+    }
+
+    /**
+     * Adds multiple messages to memory in a single request.
+     * @param {Array} messages Array of message objects
+     * @returns {Promise<object>} The server's response with batch results.
+     */
+    async addBatchMemories(messages) {
+        try {
+            const payload = {
+                messages: messages
+            };
+
+            const response = await fetch(`${this.baseUrl}/add_batch`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error adding batch memories:', error);
+            return { error: 'Failed to connect to the RAG service.' };
+        }
+    }
 }
 
 // Export the class for use in other modules

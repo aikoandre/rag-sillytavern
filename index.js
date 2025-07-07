@@ -22,6 +22,8 @@ import { MemoryClient } from './memory_client.js';
         final_memory_count: 10
     };
 
+    console.log('RAG: Extension settings loaded:', extension_settings.rag);
+
     async function initializeUI() {
         try {
             const settingsHtml = await renderExtensionTemplateAsync('third-party/rag-sillytavern', 'settings');
@@ -84,6 +86,28 @@ import { MemoryClient } from './memory_client.js';
 
             // Hook into SillyTavern events
             setupEventListeners();
+
+            // Add a debug button
+            const debugButton = document.createElement('button');
+            debugButton.textContent = 'Debug: Add Last Message';
+            debugButton.className = 'menu_button';
+            debugButton.addEventListener('click', async () => {
+                console.log('RAG: Debug button clicked');
+                await addLatestMessageToMemory();
+                await updateServiceStatusAndMemories();
+            });
+            document.querySelector('#rag-settings').appendChild(debugButton);
+
+            // Add a sync button for full chat history
+            const syncButton = document.createElement('button');
+            syncButton.textContent = 'Sync Chat History';
+            syncButton.className = 'menu_button';
+            syncButton.addEventListener('click', async () => {
+                console.log('RAG: Sync button clicked');
+                await syncChatHistory();
+                await updateServiceStatusAndMemories();
+            });
+            document.querySelector('#rag-settings').appendChild(syncButton);
         } catch (error) {
             console.error('Error initializing RAG extension UI:', error);
         }
@@ -94,14 +118,30 @@ import { MemoryClient } from './memory_client.js';
         
         // Auto-add memories when messages are sent or received
         context.eventSource.on(context.eventTypes.MESSAGE_SENT, async (data) => {
+            console.log('RAG: MESSAGE_SENT event triggered with data:', data);
             if (extension_settings.rag.auto_memory) {
+                console.log('RAG: Auto-memory enabled, adding user message');
                 await addMessageToMemory(data, 'user');
+            } else {
+                console.log('RAG: Auto-memory disabled, skipping user message');
             }
         });
 
-        context.eventSource.on(context.eventTypes.MESSAGE_RECEIVED, async (data) => {
+        context.eventSource.on(context.eventTypes.MESSAGE_RECEIVED, async (messageId, type) => {
+            console.log('RAG: MESSAGE_RECEIVED event triggered with messageId:', messageId, 'type:', type);
             if (extension_settings.rag.auto_memory) {
-                await addMessageToMemory(data, 'assistant');
+                console.log('RAG: Auto-memory enabled, adding assistant message');
+                await addMessageToMemoryById(messageId, 'assistant');
+            } else {
+                console.log('RAG: Auto-memory disabled, skipping assistant message');
+            }
+        });
+
+        // Additional fallback: Monitor chat changes
+        context.eventSource.on(context.eventTypes.CHAT_CHANGED, async () => {
+            console.log('RAG: CHAT_CHANGED event triggered');
+            if (extension_settings.rag.auto_memory) {
+                await addLatestMessageToMemory();
             }
         });
 
@@ -115,9 +155,13 @@ import { MemoryClient } from './memory_client.js';
 
     async function addMessageToMemory(messageData, messageType) {
         try {
+            console.log('RAG: addMessageToMemory called with:', { messageData, messageType });
+            
             const context = getContext();
             const characterId = context.characterId;
             const chatId = context.chatId;
+            
+            console.log('RAG: Context info:', { characterId, chatId });
             
             if (!characterId || !chatId) {
                 console.log('RAG: No character or chat context, skipping auto-memory');
@@ -135,6 +179,8 @@ import { MemoryClient } from './memory_client.js';
                 return;
             }
 
+            console.log('RAG: Extracted text:', text);
+
             // Validate that we have actual text content
             if (!text || typeof text !== 'string' || text.trim().length === 0) {
                 console.warn('RAG: No valid text content found in message data:', messageData);
@@ -147,6 +193,13 @@ import { MemoryClient } from './memory_client.js';
                 return;
             }
             
+            console.log('RAG: Adding memory with params:', {
+                text: text.substring(0, 100) + '...',
+                character_id: String(characterId),
+                chat_id: String(chatId),
+                message_type: messageType
+            });
+            
             const result = await client.addMemory(text, {
                 character_id: String(characterId),
                 chat_id: String(chatId),
@@ -156,10 +209,101 @@ import { MemoryClient } from './memory_client.js';
             if (result.error) {
                 console.error('RAG: Error adding auto-memory:', result.error);
             } else {
-                console.log('RAG: Auto-added memory:', text.substring(0, 50) + '...');
+                console.log('RAG: Auto-added memory successfully:', text.substring(0, 50) + '...');
             }
         } catch (error) {
             console.error('RAG: Error in addMessageToMemory:', error);
+        }
+    }
+
+    async function addMessageToMemoryById(messageId, messageType) {
+        try {
+            console.log('RAG: addMessageToMemoryById called with messageId:', messageId, 'messageType:', messageType);
+            
+            const context = getContext();
+            const characterId = context.characterId;
+            const chatId = context.chatId;
+            
+            if (!characterId || !chatId) {
+                console.log('RAG: No character or chat context, skipping auto-memory');
+                return;
+            }
+
+            // Get the current chat
+            const chat = context.chat;
+            
+            if (!chat || !Array.isArray(chat) || messageId >= chat.length) {
+                console.warn('RAG: Invalid messageId or chat structure:', messageId, chat?.length);
+                return;
+            }
+
+            const message = chat[messageId];
+            if (!message) {
+                console.warn('RAG: No message found at index:', messageId);
+                return;
+            }
+
+            // Use the specialized chat message endpoint
+            const result = await client.addChatMessage(message, {
+                character_id: String(characterId),
+                chat_id: String(chatId),
+                message_type: messageType
+            });
+
+            if (result.error) {
+                console.error('RAG: Error adding auto-memory by ID:', result.error);
+            } else {
+                console.log('RAG: Auto-added message by ID successfully:', message.mes?.substring(0, 50) + '...');
+            }
+        } catch (error) {
+            console.error('RAG: Error in addMessageToMemoryById:', error);
+        }
+    }
+
+    async function addLatestMessageToMemory() {
+        try {
+            console.log('RAG: addLatestMessageToMemory called');
+            
+            const context = getContext();
+            const characterId = context.characterId;
+            const chatId = context.chatId;
+            
+            if (!characterId || !chatId) {
+                console.log('RAG: No character or chat context, skipping auto-memory');
+                return;
+            }
+
+            // Get the current chat
+            const chat = context.chat;
+            
+            if (!chat || !Array.isArray(chat) || chat.length === 0) {
+                console.warn('RAG: Invalid chat structure or empty chat');
+                return;
+            }
+
+            // Get the latest message
+            const latestMessage = chat[chat.length - 1];
+            if (!latestMessage) {
+                console.warn('RAG: No latest message found');
+                return;
+            }
+
+            const messageType = latestMessage.is_user ? 'user' : 'assistant';
+            
+            // Use the specialized chat message endpoint
+            const result = await client.addChatMessage(latestMessage, {
+                character_id: String(characterId),
+                chat_id: String(chatId),
+                message_type: messageType
+            });
+
+            if (result.error) {
+                console.error('RAG: Error adding latest message to memory:', result.error);
+            } else {
+                console.log('RAG: Auto-added latest message to memory successfully:', latestMessage.mes?.substring(0, 50) + '...');
+            }
+        } catch (error) {
+            console.error('RAG: Error in addLatestMessageToMemory:', error);
         }
     }
 
@@ -327,5 +471,84 @@ import { MemoryClient } from './memory_client.js';
         await initializeUI();
         console.log('RAG Extension: UI initialized successfully');
     });
+
+    async function syncChatHistory() {
+        try {
+            console.log('RAG: syncChatHistory called');
+            
+            const context = getContext();
+            const characterId = context.characterId;
+            const chatId = context.chatId;
+            
+            if (!characterId || !chatId) {
+                console.log('RAG: No character or chat context, skipping sync');
+                return;
+            }
+
+            // Get the current chat
+            const chat = context.chat;
+            
+            if (!chat || !Array.isArray(chat) || chat.length === 0) {
+                console.warn('RAG: Invalid chat structure or empty chat');
+                return;
+            }
+
+            console.log(`RAG: Syncing ${chat.length} messages from chat history`);
+            
+            // Prepare messages for batch addition
+            const messages = chat.map((message, index) => ({
+                text: message.mes || message.message || '',
+                character_id: String(characterId),
+                chat_id: String(chatId),
+                message_type: message.is_user ? 'user' : 'assistant',
+                is_user: message.is_user,
+                mes: message.mes
+            })).filter(msg => msg.text && msg.text.trim().length > 0);
+
+            console.log(`RAG: Filtered to ${messages.length} valid messages`);
+
+            if (messages.length === 0) {
+                console.log('RAG: No valid messages to sync');
+                return;
+            }
+
+            // Add messages in batches to avoid overwhelming the server
+            const batchSize = 10;
+            const batches = [];
+            for (let i = 0; i < messages.length; i += batchSize) {
+                batches.push(messages.slice(i, i + batchSize));
+            }
+
+            console.log(`RAG: Processing ${batches.length} batches of up to ${batchSize} messages each`);
+
+            let totalProcessed = 0;
+            let totalErrors = 0;
+
+            for (let i = 0; i < batches.length; i++) {
+                const batch = batches[i];
+                console.log(`RAG: Processing batch ${i + 1}/${batches.length} with ${batch.length} messages`);
+                
+                const result = await client.addBatchMemories(batch);
+                
+                if (result.error) {
+                    console.error(`RAG: Error in batch ${i + 1}:`, result.error);
+                    totalErrors++;
+                } else {
+                    totalProcessed += result.processed || 0;
+                    if (result.errors && result.errors.length > 0) {
+                        console.warn(`RAG: Batch ${i + 1} had ${result.errors.length} errors:`, result.errors);
+                        totalErrors += result.errors.length;
+                    }
+                }
+                
+                // Small delay between batches to avoid overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log(`RAG: Sync completed. Processed: ${totalProcessed}, Errors: ${totalErrors}`);
+        } catch (error) {
+            console.error('RAG: Error in syncChatHistory:', error);
+        }
+    }
 
 })();
