@@ -124,7 +124,28 @@ import { MemoryClient } from './memory_client.js';
                 return;
             }
 
-            const text = messageData.mes || messageData.message || messageData;
+            // Better handling of message data structure
+            let text;
+            if (typeof messageData === 'string') {
+                text = messageData;
+            } else if (messageData && typeof messageData === 'object') {
+                text = messageData.mes || messageData.message || messageData.text || messageData.content;
+            } else {
+                console.warn('RAG: Invalid message data structure:', messageData);
+                return;
+            }
+
+            // Validate that we have actual text content
+            if (!text || typeof text !== 'string' || text.trim().length === 0) {
+                console.warn('RAG: No valid text content found in message data:', messageData);
+                return;
+            }
+
+            // Skip if text is just a number or ID (likely not actual message content)
+            if (text.match(/^\d+$/)) {
+                console.warn('RAG: Skipping what appears to be an ID rather than message text:', text);
+                return;
+            }
             
             const result = await client.addMemory(text, {
                 character_id: String(characterId),
