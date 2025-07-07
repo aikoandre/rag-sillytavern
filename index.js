@@ -121,7 +121,12 @@ import { MemoryClient } from './memory_client.js';
             console.log('RAG: MESSAGE_SENT event triggered with data:', data);
             if (extension_settings.rag.auto_memory) {
                 console.log('RAG: Auto-memory enabled, adding user message');
-                await addMessageToMemory(data, 'user');
+                // MESSAGE_SENT often passes a message ID, so we need to get the message by ID
+                if (typeof data === 'number' || (typeof data === 'string' && data.match(/^\d+$/))) {
+                    await addMessageToMemoryById(data, 'user');
+                } else {
+                    await addMessageToMemory(data, 'user');
+                }
             } else {
                 console.log('RAG: Auto-memory disabled, skipping user message');
             }
@@ -172,6 +177,11 @@ import { MemoryClient } from './memory_client.js';
             let text;
             if (typeof messageData === 'string') {
                 text = messageData;
+            } else if (typeof messageData === 'number' || (typeof messageData === 'string' && messageData.match(/^\d+$/))) {
+                // This is a message ID, get the message content
+                console.log('RAG: messageData appears to be an ID, getting message content');
+                await addMessageToMemoryById(messageData, messageType);
+                return;
             } else if (messageData && typeof messageData === 'object') {
                 text = messageData.mes || messageData.message || messageData.text || messageData.content;
             } else {
