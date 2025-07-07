@@ -87,6 +87,9 @@ class MemoryClient {
     }
 }
 
+// Export the class for use in other modules
+export { MemoryClient };
+
 // Example of how to use the client (for testing purposes)
 // const client = new MemoryClient();
 // client.addMemory('This is a test memory.').then(console.log);

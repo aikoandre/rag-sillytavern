@@ -2,6 +2,7 @@
 // Core logic and UI hooks for the RAG extension.
 
 import { getContext, extension_settings, saveMetadataDebounced, renderExtensionTemplateAsync } from '../../../extensions.js';
+import { MemoryClient } from './memory_client.js';
 
 (function () {
     const RAG_SERVICE_URL = 'http://127.0.0.1:5000';
@@ -12,28 +13,30 @@ import { getContext, extension_settings, saveMetadataDebounced, renderExtensionT
     let totalMemoriesSpan, lastQueryTokensSpan, initialRetrievalCountInput, finalMemoryCountInput;
 
     async function initializeUI() {
-        const settingsHtml = await renderExtensionTemplateAsync('rag_extension_for_sillytavern', 'settings');
-        const getContainer = () => document.getElementById('rag-settings') ?? document.getElementById('extensions_settings');
-        getContainer().append($(settingsHtml));
+        try {
+            const settingsHtml = await renderExtensionTemplateAsync('third-party/rag_extension_for_sillytavern', 'settings');
+            $('#extensions_settings').append(settingsHtml);
 
-        addMemoryInput = document.getElementById('rag-add-memory-input');
-        addMemoryButton = document.getElementById('rag-add-memory-button');
-        queryInput = document.getElementById('rag-query-input');
-        queryButton = document.getElementById('rag-query-button');
-        resultsContainer = document.getElementById('rag-results-container');
-        statusIndicator = document.getElementById('rag-service-status');
-        totalMemoriesSpan = document.getElementById('rag-total-memories');
-        lastQueryTokensSpan = document.getElementById('rag-last-query-tokens');
-        initialRetrievalCountInput = document.getElementById('rag-initial-retrieval-count');
-        finalMemoryCountInput = document.getElementById('rag-final-memory-count');
+            addMemoryInput = $('#rag-add-memory-input')[0];
+            addMemoryButton = $('#rag-add-memory-button')[0];
+            queryInput = $('#rag-query-input')[0];
+            queryButton = $('#rag-query-button')[0];
+            resultsContainer = $('#rag-results-container')[0];
+            statusIndicator = $('#rag-service-status')[0];
+            totalMemoriesSpan = $('#rag-total-memories')[0];
+            lastQueryTokensSpan = $('#rag-last-query-tokens')[0];
+            initialRetrievalCountInput = $('#rag-initial-retrieval-count')[0];
+            finalMemoryCountInput = $('#rag-final-memory-count')[0];
 
+            addMemoryButton.addEventListener('click', handleAddMemory);
+            queryButton.addEventListener('click', handleQuery);
 
-        addMemoryButton.addEventListener('click', handleAddMemory);
-        queryButton.addEventListener('click', handleQuery);
-
-        // Periodically check service health and update memory count
-        setInterval(updateServiceStatusAndMemories, 10000); // every 10 seconds
-        updateServiceStatusAndMemories(); // Initial check and update
+            // Periodically check service health and update memory count
+            setInterval(updateServiceStatusAndMemories, 10000); // every 10 seconds
+            updateServiceStatusAndMemories(); // Initial check and update
+        } catch (error) {
+            console.error('Error initializing RAG extension UI:', error);
+        }
     }
 
     async function handleAddMemory() {
@@ -122,6 +125,10 @@ import { getContext, extension_settings, saveMetadataDebounced, renderExtensionT
     
     // The 'extensions.settings.load' event is a common pattern in ST extensions.
     // We wait for it to ensure the DOM is ready.
-    document.addEventListener('extensions.settings.load', initializeUI, { once: true });
+    jQuery(async () => {
+        console.log('RAG Extension: Initializing UI...');
+        await initializeUI();
+        console.log('RAG Extension: UI initialized successfully');
+    });
 
 })();
