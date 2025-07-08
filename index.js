@@ -10,7 +10,7 @@ import { MemoryClient } from './memory_client.js';
 
     // --- UI Elements ---
     let addMemoryInput, addMemoryButton, queryInput, queryButton, resultsContainer, statusIndicator;
-    let lastQueryTokensSpan, fastRerankCountInput, finalMemoryCountInput;
+    let lastQueryTokensSpan, finalMemoryCountInput, minRelevanceScoreInput, maxMemoriesInput;
     let autoMemoryToggle, contextIntegrationToggle, recentMessagesToggle;
     let currentChatMemoriesSpan, allMemoriesCountSpan;
 
@@ -19,7 +19,6 @@ import { MemoryClient } from './memory_client.js';
         auto_memory: true,
         context_integration: true,
         recent_messages_enabled: true,
-        fast_rerank_count: 100,
         final_memory_count: 10,
         // Intelligent memory selection
         use_intelligent_selection: true,
@@ -42,8 +41,9 @@ import { MemoryClient } from './memory_client.js';
             resultsContainer = $('#rag-results-container')[0];
             statusIndicator = $('#rag-service-status')[0];
             lastQueryTokensSpan = $('#rag-last-query-tokens')[0];
-            fastRerankCountInput = $('#rag-fast-rerank-count')[0];
             finalMemoryCountInput = $('#rag-final-memory-count')[0];
+            minRelevanceScoreInput = $('#rag-min-relevance-score')[0];
+            maxMemoriesInput = $('#rag-max-memories')[0];
             autoMemoryToggle = $('#rag-auto-memory')[0];
             contextIntegrationToggle = $('#rag-context-integration')[0];
             recentMessagesToggle = $('#rag-recent-messages')[0];
@@ -59,8 +59,9 @@ import { MemoryClient } from './memory_client.js';
             const deleteAllMemoriesButton = $('#rag-delete-all-memories')[0];
 
             // Load settings
-            fastRerankCountInput.value = extension_settings.rag.fast_rerank_count;
             finalMemoryCountInput.value = extension_settings.rag.final_memory_count;
+            minRelevanceScoreInput.value = extension_settings.rag.min_relevance_score;
+            maxMemoriesInput.value = extension_settings.rag.max_memories;
             autoMemoryToggle.checked = extension_settings.rag.auto_memory;
             contextIntegrationToggle.checked = extension_settings.rag.context_integration;
             recentMessagesToggle.checked = extension_settings.rag.recent_messages_enabled;
@@ -70,13 +71,18 @@ import { MemoryClient } from './memory_client.js';
             queryButton.addEventListener('click', handleQuery);
             
             // Settings change handlers
-            fastRerankCountInput.addEventListener('change', () => {
-                extension_settings.rag.fast_rerank_count = parseInt(fastRerankCountInput.value);
+            finalMemoryCountInput.addEventListener('change', () => {
+                extension_settings.rag.final_memory_count = parseInt(finalMemoryCountInput.value);
                 saveMetadataDebounced();
             });
             
-            finalMemoryCountInput.addEventListener('change', () => {
-                extension_settings.rag.final_memory_count = parseInt(finalMemoryCountInput.value);
+            minRelevanceScoreInput.addEventListener('change', () => {
+                extension_settings.rag.min_relevance_score = parseFloat(minRelevanceScoreInput.value);
+                saveMetadataDebounced();
+            });
+            
+            maxMemoriesInput.addEventListener('change', () => {
+                extension_settings.rag.max_memories = parseInt(maxMemoriesInput.value);
                 saveMetadataDebounced();
             });
             
@@ -423,7 +429,6 @@ import { MemoryClient } from './memory_client.js';
                     chat_id: String(chatId),
                     include_all_chats: false,
                     top_k: -1,  // Always retrieve all memories, then filter by character/chat
-                    rerank_fast_top_n: extension_settings.rag.fast_rerank_count,
                     final_top_n: extension_settings.rag.final_memory_count
                 };
 
@@ -498,7 +503,6 @@ import { MemoryClient } from './memory_client.js';
         resultsContainer.innerHTML = '<p>Querying...</p>';
         lastQueryTokensSpan.textContent = '0'; // Reset token count
 
-        const rerank_fast_top_n = parseInt(fastRerankCountInput.value, 10);
         const final_top_n = parseInt(finalMemoryCountInput.value, 10);
 
         const queryParams = {
@@ -506,7 +510,6 @@ import { MemoryClient } from './memory_client.js';
             chat_id: chatId ? String(chatId) : null,
             include_all_chats: false,
             top_k: -1,  // Always retrieve all memories, then filter by character/chat
-            rerank_fast_top_n: rerank_fast_top_n,
             final_top_n: final_top_n
         };
 
