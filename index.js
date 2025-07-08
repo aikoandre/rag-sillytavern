@@ -20,7 +20,12 @@ import { MemoryClient } from './memory_client.js';
         context_integration: true,
         recent_messages_enabled: true,
         fast_rerank_count: 100,
-        final_memory_count: 10
+        final_memory_count: 10,
+        // Intelligent memory selection
+        use_intelligent_selection: true,
+        min_relevance_score: 0.7,
+        max_memories: 8,
+        min_memories: 2
     };
 
     console.log('RAG: Extension settings loaded:', extension_settings.rag);
@@ -53,12 +58,24 @@ import { MemoryClient } from './memory_client.js';
             const deleteChatMemoriesButton = $('#rag-delete-chat-memories')[0];
             const deleteAllMemoriesButton = $('#rag-delete-all-memories')[0];
 
+            // Get intelligent selection elements
+            const useIntelligentSelectionToggle = $('#rag-use-intelligent-selection')[0];
+            const minRelevanceScoreInput = $('#rag-min-relevance-score')[0];
+            const maxMemoriesInput = $('#rag-max-memories')[0];
+            const minMemoriesInput = $('#rag-min-memories')[0];
+
             // Load settings
             fastRerankCountInput.value = extension_settings.rag.fast_rerank_count;
             finalMemoryCountInput.value = extension_settings.rag.final_memory_count;
             autoMemoryToggle.checked = extension_settings.rag.auto_memory;
             contextIntegrationToggle.checked = extension_settings.rag.context_integration;
             recentMessagesToggle.checked = extension_settings.rag.recent_messages_enabled;
+            
+            // Load intelligent selection settings
+            useIntelligentSelectionToggle.checked = extension_settings.rag.use_intelligent_selection;
+            minRelevanceScoreInput.value = extension_settings.rag.min_relevance_score;
+            maxMemoriesInput.value = extension_settings.rag.max_memories;
+            minMemoriesInput.value = extension_settings.rag.min_memories;
 
             // Event listeners
             addMemoryButton.addEventListener('click', handleAddMemory);
@@ -87,6 +104,27 @@ import { MemoryClient } from './memory_client.js';
             
             recentMessagesToggle.addEventListener('change', () => {
                 extension_settings.rag.recent_messages_enabled = recentMessagesToggle.checked;
+                saveMetadataDebounced();
+            });
+
+            // Intelligent selection settings handlers
+            useIntelligentSelectionToggle.addEventListener('change', () => {
+                extension_settings.rag.use_intelligent_selection = useIntelligentSelectionToggle.checked;
+                saveMetadataDebounced();
+            });
+            
+            minRelevanceScoreInput.addEventListener('change', () => {
+                extension_settings.rag.min_relevance_score = parseFloat(minRelevanceScoreInput.value);
+                saveMetadataDebounced();
+            });
+            
+            maxMemoriesInput.addEventListener('change', () => {
+                extension_settings.rag.max_memories = parseInt(maxMemoriesInput.value);
+                saveMetadataDebounced();
+            });
+            
+            minMemoriesInput.addEventListener('change', () => {
+                extension_settings.rag.min_memories = parseInt(minMemoriesInput.value);
                 saveMetadataDebounced();
             });
 
@@ -413,14 +451,23 @@ import { MemoryClient } from './memory_client.js';
             // Get relevant memories from the current conversation context
             const lastMessage = context.chat[context.chat.length - 1];
             if (lastMessage && lastMessage.mes) {
-                const queryResult = await client.queryMemories(lastMessage.mes, {
+                const queryParams = {
                     character_id: String(characterId),
                     chat_id: String(chatId),
                     include_all_chats: false,
                     top_k: -1,  // Always retrieve all memories, then filter by character/chat
                     rerank_fast_top_n: extension_settings.rag.fast_rerank_count,
                     final_top_n: extension_settings.rag.final_memory_count
-                });
+                };
+
+                // Add intelligent selection parameters if enabled
+                if (extension_settings.rag.use_intelligent_selection) {
+                    queryParams.min_relevance_score = extension_settings.rag.min_relevance_score;
+                    queryParams.max_memories = extension_settings.rag.max_memories;
+                    queryParams.min_memories = extension_settings.rag.min_memories;
+                }
+
+                const queryResult = await client.queryMemories(lastMessage.mes, queryParams);
 
                 if (queryResult.results && queryResult.results.length > 0) {
                     const memoryContext = 'Relevant memories:\n' + 
@@ -487,14 +534,23 @@ import { MemoryClient } from './memory_client.js';
         const rerank_fast_top_n = parseInt(fastRerankCountInput.value, 10);
         const final_top_n = parseInt(finalMemoryCountInput.value, 10);
 
-        const result = await client.queryMemories(text, {
+        const queryParams = {
             character_id: characterId ? String(characterId) : null,
             chat_id: chatId ? String(chatId) : null,
             include_all_chats: false,
             top_k: -1,  // Always retrieve all memories, then filter by character/chat
             rerank_fast_top_n: rerank_fast_top_n,
             final_top_n: final_top_n
-        });
+        };
+
+        // Add intelligent selection parameters if enabled
+        if (extension_settings.rag.use_intelligent_selection) {
+            queryParams.min_relevance_score = extension_settings.rag.min_relevance_score;
+            queryParams.max_memories = extension_settings.rag.max_memories;
+            queryParams.min_memories = extension_settings.rag.min_memories;
+        }
+
+        const result = await client.queryMemories(text, queryParams);
         queryButton.disabled = false;
 
         if (result.error) {

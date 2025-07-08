@@ -1,5 +1,42 @@
-<!-- SillyTavern RAG Extension Settings -->
-<div id="rag-settings" class="rag-container">
+<!-- SillyTavern RAG Extension Settings                 <div class="rag-section">
+                    <h3>Reranking Configuration</h3>
+                    <div class="rag-config-item">
+                        <label for="rag-fast-rerank-count">Fast Rerank Count (rerank_fast_top_n):</label>
+                        <input type="number" id="rag-fast-rerank-count" class="text_pole" value="100" min="1">
+                        <small>Number of memories to pass to the strong reranker (default: 100)</small>
+                    </div>
+                    <div class="rag-config-item">
+                        <label for="rag-final-memory-count">Final Memory Count (final_top_n):</label>
+                        <input type="number" id="rag-final-memory-count" class="text_pole" value="10" min="1">
+                        <small>Maximum number of memories to return (default: 10)</small>
+                    </div>
+                </div>
+
+                <div class="rag-section">
+                    <h3>Intelligent Memory Selection</h3>
+                    <div class="rag-config-item">
+                        <label>
+                            <input type="checkbox" id="rag-use-intelligent-selection" checked>
+                            Enable Intelligent Selection
+                        </label>
+                        <small>Use relevance scores to dynamically select the best memories</small>
+                    </div>
+                    <div class="rag-config-item">
+                        <label for="rag-min-relevance-score">Minimum Relevance Score:</label>
+                        <input type="number" id="rag-min-relevance-score" class="text_pole" value="0.7" min="0" max="1" step="0.1">
+                        <small>Only include memories with relevance score above this threshold (0.0-1.0)</small>
+                    </div>
+                    <div class="rag-config-item">
+                        <label for="rag-max-memories">Maximum Memories:</label>
+                        <input type="number" id="rag-max-memories" class="text_pole" value="8" min="1">
+                        <small>Maximum number of memories to include, even if more are relevant</small>
+                    </div>
+                    <div class="rag-config-item">
+                        <label for="rag-min-memories">Minimum Memories:</label>
+                        <input type="number" id="rag-min-memories" class="text_pole" value="2" min="1">
+                        <small>Minimum number of memories to include, even if less relevant</small>
+                    </div>
+                </div>rag-settings" class="rag-container">
     <div class="inline-drawer">
         <div class="inline-drawer-toggle inline-drawer-header">
             <div class="flex-container alignitemscenter margin0">
