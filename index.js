@@ -58,24 +58,12 @@ import { MemoryClient } from './memory_client.js';
             const deleteChatMemoriesButton = $('#rag-delete-chat-memories')[0];
             const deleteAllMemoriesButton = $('#rag-delete-all-memories')[0];
 
-            // Get intelligent selection elements
-            const useIntelligentSelectionToggle = $('#rag-use-intelligent-selection')[0];
-            const minRelevanceScoreInput = $('#rag-min-relevance-score')[0];
-            const maxMemoriesInput = $('#rag-max-memories')[0];
-            const minMemoriesInput = $('#rag-min-memories')[0];
-
             // Load settings
             fastRerankCountInput.value = extension_settings.rag.fast_rerank_count;
             finalMemoryCountInput.value = extension_settings.rag.final_memory_count;
             autoMemoryToggle.checked = extension_settings.rag.auto_memory;
             contextIntegrationToggle.checked = extension_settings.rag.context_integration;
             recentMessagesToggle.checked = extension_settings.rag.recent_messages_enabled;
-            
-            // Load intelligent selection settings
-            useIntelligentSelectionToggle.checked = extension_settings.rag.use_intelligent_selection;
-            minRelevanceScoreInput.value = extension_settings.rag.min_relevance_score;
-            maxMemoriesInput.value = extension_settings.rag.max_memories;
-            minMemoriesInput.value = extension_settings.rag.min_memories;
 
             // Event listeners
             addMemoryButton.addEventListener('click', handleAddMemory);
@@ -104,27 +92,6 @@ import { MemoryClient } from './memory_client.js';
             
             recentMessagesToggle.addEventListener('change', () => {
                 extension_settings.rag.recent_messages_enabled = recentMessagesToggle.checked;
-                saveMetadataDebounced();
-            });
-
-            // Intelligent selection settings handlers
-            useIntelligentSelectionToggle.addEventListener('change', () => {
-                extension_settings.rag.use_intelligent_selection = useIntelligentSelectionToggle.checked;
-                saveMetadataDebounced();
-            });
-            
-            minRelevanceScoreInput.addEventListener('change', () => {
-                extension_settings.rag.min_relevance_score = parseFloat(minRelevanceScoreInput.value);
-                saveMetadataDebounced();
-            });
-            
-            maxMemoriesInput.addEventListener('change', () => {
-                extension_settings.rag.max_memories = parseInt(maxMemoriesInput.value);
-                saveMetadataDebounced();
-            });
-            
-            minMemoriesInput.addEventListener('change', () => {
-                extension_settings.rag.min_memories = parseInt(minMemoriesInput.value);
                 saveMetadataDebounced();
             });
 

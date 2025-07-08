@@ -1,88 +1,95 @@
 # SillyTavern RAG Extension
 
-This extension provides a powerful, local-first Retrieval-Augmented Generation (RAG) system for SillyTavern. It uses a Python backend with a two-stage reranking process to find the most relevant memories and inject them into the context.
+This extension provides a user interface and integration layer for connecting SillyTavern to a RAG (Retrieval-Augmented Generation) service. It automatically captures conversations and intelligently injects relevant memories into the AI context.
 
 ## Features
 
--   **Local First:** All models (embedding and rerankers) run locally on your machine.
--   **Persistent Memory:** Embeddings and metadata are saved to disk (`faiss.index` and `metadata.json`).
--   **Two-Stage Reranking:** A fast reranker filters a large number of candidates, and a more powerful (but slower) reranker selects the final, most relevant memories.
--   **Simple UI:** A settings panel in SillyTavern to add and query memories.
+-   **Automatic Integration:** Seamlessly adds user and AI messages to memory and injects relevant memories into AI context.
+-   **Memory Management:** Tools to add, query, and delete memories per chat or globally.
+-   **Real-time Status:** Live monitoring of RAG service health and memory statistics.
+-   **User-Friendly Interface:** Simple controls for manual memory management and configuration.
+-   **Smart Defaults:** Intelligent memory selection works automatically without complex configuration.
 
 ## How It Works
 
-1.  **Python Service:** A Flask-based web service (`rag_faiss_service.py`) handles all the heavy lifting.
-    -   It automatically downloads and caches the necessary models from Hugging Face Hub.
-    -   It exposes `/add` and `/query` endpoints.
-2.  **SillyTavern Extension:** The JavaScript extension communicates with the Python service.
-    -   It provides a UI for interacting with the RAG system.
-    -   (Future Work): It will automatically add messages to the memory and inject query results into the prompt.
+This extension acts as a bridge between SillyTavern and a RAG service:
 
-## Setup and Installation
+-   **Message Capture:** Automatically captures user and AI messages when enabled.
+-   **Memory Integration:** Communicates with the RAG service to store and retrieve memories.
+-   **Context Injection:** Intelligently injects the most relevant memories into the AI context during generation.
+-   **User Interface:** Provides controls for manual memory management and configuration.
 
-### Step 1: Python Environment Setup
+## Installation
 
-The backend service requires a specific Python environment. We recommend using Conda.
+### Prerequisites
 
-1.  **Install Conda:** If you don't have it, install [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) or [Anaconda](https://www.anaconda.com/products/distribution).
+-   **RAG Service:** This extension requires a compatible RAG service running on `http://127.0.0.1:5000`. The service handles embedding generation, memory storage, and retrieval.
 
-2.  **Create and Activate Conda Environment:**
-    Open your terminal and run the following commands to create a new environment named `ST` and install the required packages.
+### Installing the Extension
 
-    ```bash
-    # Create the environment
-    conda create --name ST python=3.10 -y
-
-    # Activate the environment
-    conda activate ST
-
-    # Install required Python packages
-    pip install flask sentence-transformers faiss-cpu numpy huggingface_hub
-    ```
-
-### Step 2: Running the RAG Service
-
-Before using the extension in SillyTavern, you must start the Python backend service.
-
-1.  **Open a new terminal** in the root directory of this project.
-2.  **Activate the conda environment:**
-    ```bash
-    conda activate ST
-    ```
-3.  **Run the service script:**
-    You can run the service directly or use the provided shell script.
-
-    **Using the script (recommended for Linux/macOS):**
-    ```bash
-    # Make the script executable (only needs to be done once)
-    chmod +x run_rag_service.sh
-
-    # Run the service
-    ./run_rag_service.sh
-    ```
-
-    **Running directly (for Windows or if the script fails):**
-    ```bash
-    python rag_faiss_service.py
-    ```
-
-4.  **First-time Model Download:** The first time you run the service, it will download several GB of models from Hugging Face. This may take some time. You will see progress bars in the terminal.
-
-5.  **Keep it running:** Leave this terminal window open. The service must be running in the background for the extension to work.
-
-### Step 3: Installing the Extension in SillyTavern
-
-1.  **GitHub Repository:** This project needs to be in a GitHub repository. The user will use the link to this repository to install it.
-2.  **SillyTavern Installation:**
-    -   Go to the "Extensions" tab in SillyTavern.
-    -   Under "Download Extension", paste the URL of the GitHub repository.
-    -   Click "Download".
-    -   Enable the "RAG Extension" in the extensions list.
+1.  **Copy Extension Files:** Copy the `rag_extension_for_sillytavern` folder to your SillyTavern's `public/third-party/` directory.
+2.  **Enable Extension:**
+    -   Open SillyTavern and go to the "Extensions" tab.
+    -   Find "RAG Extension" in the list and enable it.
+    -   The extension settings will appear in the extensions panel.
 
 ## How to Use
 
-1.  **Start the RAG Service:** Make sure the Python service is running (see Step 2 above).
+1.  **Start the RAG Service:** Make sure your RAG service is running on `http://127.0.0.1:5000`.
 2.  **Open SillyTavern:** Navigate to the extensions settings panel for the RAG extension.
-3.  **Check Status:** The "Service Status" indicator should be green. If it's red, the service is not running or is unreachable.
-4.  **Add Memories:** Type text into the "Add Memory" box and click the button. This will embed the text and save it.
-5.  **Query Memories:** Type a query into the "Query Memories" box and click "Query". The top 10 most relevant results from the two-stage reranking process will be displayed.
+3.  **Check Status:** The "Service Status" indicator should show as connected. If not, the service is not running or unreachable.
+
+### Basic Usage
+
+-   **Add Memories:** Type text into the "Add Memory" box and click the button to manually add memories.
+-   **Query Memories:** Type a query into the "Query Memories" box and click "Query" to see relevant memories.
+-   **View Statistics:** Check the memory counts and token usage in the statistics section.
+
+### Automatic Features
+
+The extension includes several automatic features that work seamlessly:
+
+-   **Auto-Memory:** Automatically adds user and AI messages to memory (can be toggled).
+-   **Context Integration:** Intelligently injects relevant memories into AI context during generation.
+-   **Recent Messages:** Includes recent conversation history for better context continuity.
+
+### Memory Management
+
+-   **Sync Chat History:** Bulk-add all messages from the current chat to memory.
+-   **Delete Current Chat:** Remove all memories from the current character and chat.
+-   **Delete All Memories:** Nuclear option to clear all memories (requires confirmation).
+
+### Configuration Options
+
+-   **Reranking Parameters:** Adjust how many memories are processed (default: 100) and returned (default: 10).
+-   **Integration Settings:** Control automatic memory addition and context injection.
+
+## Extension Files
+
+This extension consists of the following files:
+
+-   **`index.js`** - Main extension logic and SillyTavern integration
+-   **`memory_client.js`** - Communication layer for the RAG service API
+-   **`settings.html`** - User interface for the extension settings
+-   **`style.css`** - Styling for the extension UI
+-   **`manifest.json`** - Extension metadata and configuration
+
+## API Communication
+
+The extension communicates with the RAG service through these endpoints:
+
+-   **`/add`** - Add new memories
+-   **`/query`** - Query for relevant memories
+-   **`/status`** - Check service health and memory statistics
+-   **`/delete_memories`** - Delete memories with optional filtering
+-   **`/recent`** - Get recent messages for context
+
+## Configuration
+
+The extension uses intelligent memory selection with these default settings:
+
+-   **Relevance Threshold:** Only memories with >70% relevance are considered
+-   **Dynamic Count:** Returns 2-8 memories based on relevance scores
+-   **Quality Focus:** Prioritizes highly relevant memories over fixed counts
+
+These settings work automatically without requiring user configuration.
